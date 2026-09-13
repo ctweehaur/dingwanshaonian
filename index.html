@@ -1,91 +1,94 @@
-// ✍️ 主观题渲染器
-function renderSubjectiveQuestions() {
-    if (typeof subjectiveQuestions === 'undefined' || subjectiveQuestions.length === 0) return;
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>华文智能互动学习阅读器</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-    const section = document.getElementById('subjectiveSection');
-    const container = document.getElementById('subjectiveContainer');
-    if (!section || !container) return;
-    
-    container.innerHTML = "";
-    section.style.display = "block";
+    <div class="control-panel">
+        <button id="themeToggleBtn" onclick="toggleTheme()">🌓 切换主题</button>
+        <button id="gameToggleBtn" onclick="toggleGameMode()">🎯 生词测试</button>
+        <button id="teacherToggleBtn" onclick="toggleTeacherMode()" style="background: #9b59b6; color: white;">👁️ 文本赏析</button>
+    </div>
 
-    subjectiveQuestions.forEach((q) => {
-        const qBox = document.createElement('div');
-        qBox.style.marginBottom = "30px";
-        qBox.style.paddingBottom = "20px";
-        qBox.style.borderBottom = "1px dashed #ddd";
+    <div class="vocab-notebook">
+        <div class="notebook-title">
+            <span>📖 我的生词本</span>
+            <button class="clear-btn" onclick="forceClearNotebook()">清空本子 🗑️</button>
+        </div>
+        <div id="notebookList" class="notebook-list"></div>
+    </div>
 
-        // 题目
-        const qText = document.createElement('div');
-        qText.style.fontWeight = "bold";
-        qText.style.fontSize = "16px";
-        qText.style.marginBottom = "12px";
-        qText.style.lineHeight = "1.7";
-        qText.innerHTML = `${q.id}. ${q.question}`;
-        qBox.appendChild(qText);
+    <div id="gameContainer" class="game-container" style="display: none;">
+        <div class="quiz-card">
+            <div id="quizProgress" style="font-size: 14px; color: #7f8c8d; margin-bottom: 5px;"></div>
+            <div id="quizQuestion" class="quiz-question"></div>
+            <div id="quizPinyin" class="quiz-pinyin"></div>
+            <div id="quizOptions" class="quiz-options"></div>
+        </div>
+    </div>
 
-        // 作答区
-        const textarea = document.createElement('textarea');
-        textarea.placeholder = "在这里写下你的答案...";
-        textarea.style.width = "100%";
-        textarea.style.minHeight = "100px";
-        textarea.style.padding = "12px";
-        textarea.style.fontSize = "14px";
-        textarea.style.borderRadius = "8px";
-        textarea.style.border = "1.5px solid #ccc";
-        textarea.style.fontFamily = "inherit";
-        textarea.style.lineHeight = "1.7";
-        textarea.style.resize = "vertical";
-        textarea.style.boxSizing = "border-box";
-        qBox.appendChild(textarea);
+    <div class="article-card">
+        <h1 id="articleTitle">课文加载中...</h1>
+        <div id="teacherArticleAnalysis" style="display: none; background: #f3e5f5; border-left: 4px solid #9b59b6; padding: 15px; margin-bottom: 20px; border-radius: 4px; font-size: 14px; color: #4a148c; position: relative;">
+            <div id="teacherArticleAnalysisContent"></div>
+        </div>
+        <div id="content"></div>
+    </div>
 
-        // 参考答案按钮
-        const toggleBtn = document.createElement('button');
-        toggleBtn.innerText = "📖 查看参考答案";
-        toggleBtn.style.marginTop = "10px";
-        toggleBtn.style.padding = "8px 18px";
-        toggleBtn.style.background = "#3498db";
-        toggleBtn.style.color = "white";
-        toggleBtn.style.border = "none";
-        toggleBtn.style.borderRadius = "20px";
-        toggleBtn.style.cursor = "pointer";
-        toggleBtn.style.fontSize = "13px";
-        toggleBtn.style.fontWeight = "bold";
-        qBox.appendChild(toggleBtn);
-
-        // 参考答案区（默认隐藏）
-        const answerBox = document.createElement('div');
-        answerBox.style.display = "none";
-        answerBox.style.marginTop = "12px";
-        answerBox.style.padding = "14px 18px";
-        answerBox.style.background = "#eafaf1";
-        answerBox.style.borderLeft = "4px solid #2ecc71";
-        answerBox.style.borderRadius = "6px";
-        answerBox.style.fontSize = "14px";
-        answerBox.style.lineHeight = "1.8";
-
-        let answerHTML = `<div style="font-weight:bold; color:#27ae60; margin-bottom:8px;">✅ 参考答案：</div>`;
-        answerHTML += `<div style="color:#2c3e50; margin-bottom:10px;">${q.modelAnswer}</div>`;
+    <div id="quizSection" class="article-card" style="margin-top: 30px; display: none;">
+        <h2 style="font-size: 20px; color: #2c3e50; margin-bottom: 20px; border-bottom: 2px dashed #bdc3c7; padding-bottom: 10px;">📝 选择题</h2>
         
-        if (q.teacherAnalysis) {
-            answerHTML += `<div style="font-weight:bold; color:#8e44ad; margin-top:12px; margin-bottom:6px;">📐 设题意图与核心考点：</div>`;
-            answerHTML += `<div style="color:#555;">${q.teacherAnalysis}</div>`;
-        }
-        answerBox.innerHTML = answerHTML;
+        <div id="quizContainer"></div>
 
-        toggleBtn.onclick = () => {
-            if (answerBox.style.display === "none") {
-                answerBox.style.display = "block";
-                toggleBtn.innerText = "🙈 收起参考答案";
-                toggleBtn.style.background = "#95a5a6";
-            } else {
-                answerBox.style.display = "none";
-                toggleBtn.innerText = "📖 查看参考答案";
-                toggleBtn.style.background = "#3498db";
-            }
-        };
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #eaefed; text-align: center;">
+            <button id="submitQuizBtn" onclick="submitAndShowWrongOnly()" style="padding: 12px 30px; background: #34495e; color: white; border: none; border-radius: 25px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s;">
+                提交检查 🚀
+            </button>
+            
+            <button id="retryQuizBtn" onclick="retryQuizAnswers()" style="display: none; padding: 12px 30px; background: #e67e22; color: white; border: none; border-radius: 25px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; margin-right: 10px;">
+                重新作答 🔄
+            </button>
 
-        qBox.appendChild(answerBox);
-        container.appendChild(qBox);
-    });
-}
+            <button id="showCorrectBtn" onclick="revealRealCorrectAnswers()" style="display: none; padding: 12px 30px; background: #2ecc71; color: white; border: none; border-radius: 25px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s;">
+                查看正确答案 👁️
+            </button>
+
+            <div id="quizResultScore" style="margin-top: 15px; font-size: 18px; font-weight: bold; color: #2ecc71; display: none; line-height: 1.6;"></div>
+        </div>
+    </div>
+
+    <!-- ⬇️ 新增：主观题区域 -->
+    <div id="subjectiveSection" class="article-card" style="margin-top: 30px; display: none;">
+        <h2 style="font-size: 20px; color: #2c3e50; margin-bottom: 20px; border-bottom: 2px dashed #bdc3c7; padding-bottom: 10px;">✍️ 主观题</h2>
+        <div id="subjectiveContainer"></div>
+    </div>
+
+    <div id="buddyPopover" class="buddy-popover">
+        <div class="pop-title-row">
+            <span id="popWord" class="pop-title">词</span>
+            <span id="popPinyin" class="pop-pinyin">[pīn yīn]</span>
+        </div>
+        <div class="pop-box pop-en">
+            <span class="pop-tag">EN</span>
+            <span id="popEn">English translation</span>
+        </div>
+        <div class="pop-box pop-bm">
+            <span class="pop-tag">BM</span>
+            <span id="popBm">Terjemahan Melayu</span>
+        </div>
+        <div class="pop-footer">
+            <button class="pop-btn-copy" onclick="saveToNotebook(event)">Copy 📋</button>
+        </div>
+        <div id="popArrow" class="pop-arrow"></div>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="questions.js"></script>
+    <script src="analysis.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
